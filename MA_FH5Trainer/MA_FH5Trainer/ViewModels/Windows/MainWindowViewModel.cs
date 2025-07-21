@@ -31,19 +31,19 @@ namespace MA_FH5Trainer.ViewModels.Windows;
 
 public partial class MainWindowViewModel : ObservableObject
 {
-    private bool _isInitialized;        
+    private bool _isInitialized;
     Timer m_timer = new Timer();
 
     [ObservableProperty]
     private GlobalHotkey m_selectedHotkey = new("DUmb", ModifierKeys.None, Key.None, () => {});
 
     public ObservableCollection<GlobalHotkey> Hotkeys { get; } = [];
-    
+
     private const double WindowCornerRadiusSize = 7.5;
-    
+
     [ObservableProperty]
     private string _applicationTitle = string.Empty;
-    
+
     [ObservableProperty]
     private string _attachedText = string.Empty;
 
@@ -60,35 +60,38 @@ public partial class MainWindowViewModel : ObservableObject
     private string _processIdText = string.Empty;
 
     [ObservableProperty]
+    private string _trainerVersion = string.Empty;
+
+    [ObservableProperty]
     private Brush _attachedBrush = Brushes.Red;
-    
+
     [ObservableProperty]
     private Brush _versionBrush = Brushes.White;
-    
+
     [ObservableProperty]
     private string _versionTooltipText = string.Empty;
 
     [ObservableProperty]
     private bool _showVersionWarning;
-    
+
     [ObservableProperty]
     private bool _attached;
-    
+
     [ObservableProperty]
     private bool _tuningScanSuccess;
-    
+
     [ObservableProperty]
     private bool _tuningScanToBeDone = true;
-    
+
     [ObservableProperty]
     private bool _tuningScanInProgress;
-    
+
     [ObservableProperty]
     private bool _hotkeysEnabled;
-    
+
     [ObservableProperty]
     private CornerRadius _windowCornerRadius = new(WindowCornerRadiusSize);
-    
+
     [ObservableProperty]
     private CornerRadius _topBarCornerRadius = new(WindowCornerRadiusSize, WindowCornerRadiusSize, 0, 0);
 
@@ -97,7 +100,7 @@ public partial class MainWindowViewModel : ObservableObject
 
     [ObservableProperty]
     private ExpandersView? _expandersView;
-    
+
     private static readonly object s_InitLock = new();
     private static readonly object s_TimerLock = new();
 
@@ -109,7 +112,7 @@ public partial class MainWindowViewModel : ObservableObject
             {
                 return;
             }
-            
+
             _isInitialized = true;
             InitializeViewModel();
         }
@@ -134,11 +137,11 @@ public partial class MainWindowViewModel : ObservableObject
         PlatformText = "None";
         VersionText = "Unknown";
         ShowVersionWarning = false;
-        
+
         TuningScanSuccess = false;
         TuningScanInProgress = false;
         TuningScanToBeDone = true;
-        
+
         if (!m_firstInit)
         {
             // The language will cry if this isn't called from an
@@ -157,10 +160,18 @@ public partial class MainWindowViewModel : ObservableObject
     {
         ExpandersView = new ExpandersView();
     }
-    
+
     private async void InitializeViewModel()
     {
-        ApplicationTitle = "MA_FH5Trainer (v" + Assembly.GetExecutingAssembly().GetName().Version + ")";
+        Version? version = Assembly.GetExecutingAssembly().GetName().Version;
+        if (version == null)
+        {
+            Environment.Exit(0);
+            return;
+        }
+
+        ApplicationTitle = "Merika's FH5 Trainer";
+        TrainerVersion = "v" + version.ToString();
         ZeroGameText();
 
         SetupAttach();
@@ -182,21 +193,21 @@ public partial class MainWindowViewModel : ObservableObject
             {
                 return string.Empty;
             }
-            
+
             var json = await response.Content.ReadAsStringAsync();
             var release = JsonDocument.Parse(json);
             var root = release.RootElement;
-                
+
             if (root.ValueKind != JsonValueKind.Object)
             {
                 return string.Empty;
             }
-                
+
             if (!root.TryGetProperty("tag_name", out var tagNameElement))
             {
                 return string.Empty;
             }
-                
+
             return tagNameElement.ValueKind != JsonValueKind.String ? string.Empty : tagNameElement.GetString();
         }
         catch (HttpRequestException ex)
@@ -225,13 +236,13 @@ public partial class MainWindowViewModel : ObservableObject
         {
             return;
         }
-        
+
         var result = MessageBox.Show($"Update to version {version}", "Update Available", MessageBoxButton.YesNo, MessageBoxImage.Warning);
         if (result != MessageBoxResult.Yes)
         {
             return;
         }
-        
+
         Process.Start("explorer.exe", $"{GitUpdate}");
         Environment.Exit(1);
     }
@@ -258,13 +269,13 @@ public partial class MainWindowViewModel : ObservableObject
             MessageBox.Show("The tool is up to date.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
-        
+
         var result = MessageBox.Show($"Update to version {version}", "Update Available", MessageBoxButton.YesNo, MessageBoxImage.Warning);
         if (result != MessageBoxResult.Yes)
         {
             return;
         }
-        
+
         Process.Start("explorer.exe", $"{GitUpdate}");
         Environment.Exit(1);
     }
@@ -276,20 +287,20 @@ public partial class MainWindowViewModel : ObservableObject
         {
             return Task.CompletedTask;
         }
-        
+
         Process.Start(new ProcessStartInfo(urlAsString) { UseShellExecute = true });
         return Task.CompletedTask;
     }
-    
+
     private void SetupAttach()
     {
         m_timer.Interval = 1_000;
-        m_timer.Elapsed += (_, _) => 
+        m_timer.Elapsed += (_, _) =>
         {
             lock (s_TimerLock)
             {
                 string processName = "forzahorizon5.exe";
-                if (Attached)        
+                if (Attached)
                 {
                     int procId = Mem.GetProcIdFromName(processName);
                     if (procId > 0)
@@ -302,7 +313,7 @@ public partial class MainWindowViewModel : ObservableObject
                     {
                         ((ICheatsBase)cheatInstance.Value).Reset();
                     }
-                    
+
                     Attached = false;
                     ZeroGameText();
                 }
@@ -310,18 +321,18 @@ public partial class MainWindowViewModel : ObservableObject
                 {
                     AttachedBrush = AttachedBrush == Brushes.Red ? Brushes.Transparent : Brushes.Red;
                     Mem.OpenProcessResults open = GetInstance().OpenProcess(processName);
-                    if (open != Mem.OpenProcessResults.Success)
+                    if (open != Mem.OpenProcessResults.Success && open != Mem.OpenProcessResults.ProcessNotFound)
                     {
-                        MessageBox.Show($"Failed to open process, reason: {open.ToString()}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        MessageBox.Show("Failed to open the process. Reason: " + open.ToString(), "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                         return;
                     }
-                    
+
                     GvpMaker(processName);
                     Attached = true;
                 }
             }
         };
-        
+
         m_timer.Start();
     }
 
@@ -332,11 +343,11 @@ public partial class MainWindowViewModel : ObservableObject
         {
             return;
         }
-        
+
         string platform = "";
-        string update = "";    
+        string update = "";
         var gamePath = process.MainModule.FileName;
-        
+
         try
         {
             if (gamePath.Contains("Microsoft.624F8B84B80"))
@@ -357,7 +368,7 @@ public partial class MainWindowViewModel : ObservableObject
         }
         catch
         {
-            if (string.IsNullOrEmpty(platform)) 
+            if (string.IsNullOrEmpty(platform))
             {
                 platform = "Unknown";
             }
@@ -376,7 +387,7 @@ public partial class MainWindowViewModel : ObservableObject
         gvp.Platform = platform;
         gvp.Update = update;
         gvp.Type = type;
-        
+
         AttachedText = "On";
         ProcessNameText = smoothName;
         ProcessIdText = GetInstance().MProc.ProcessId.ToString();
@@ -393,7 +404,7 @@ public partial class MainWindowViewModel : ObservableObject
             _ => GameVerPlat.GameType.None
         };
     }
-    
+
     private static string GetNameFromProcType(GameVerPlat.GameType type)
     {
         return type switch

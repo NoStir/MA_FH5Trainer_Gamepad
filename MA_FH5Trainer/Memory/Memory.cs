@@ -47,6 +47,7 @@ public partial class Mem
         ProcessNotFound,
         NotResponding,
         FailedToOpenHandle,
+        FailedToEnablePrivilege,
         Success,
     }
     
@@ -168,7 +169,7 @@ public partial class Mem
             bool enabled = EnableSeDebugPrivilege();
             if (!enabled)
             {
-                return OpenProcessResults.FailedToOpenHandle;
+                return OpenProcessResults.FailedToEnablePrivilege;
             }
 
             MProc.Handle = Imps.OpenProcess(
