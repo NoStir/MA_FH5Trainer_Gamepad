@@ -14,6 +14,8 @@ public partial class GlobalHotkey : ObservableObject
 
     public ModifierKeys Modifier { get; set; }
     public Key Key{ get; set; }
+    public GamepadButton GamepadButton { get; set; }
+    public bool UseGamepad { get; set; }
 
     public bool IsPressed { get; set; }
     public bool CanExecute { get; set; }
@@ -27,6 +29,20 @@ public partial class GlobalHotkey : ObservableObject
         Name = name;
         Modifier = modifier;
         Key = key;
+        GamepadButton = GamepadButton.None;
+        UseGamepad = false;
+        Callback = callback;
+        Interval = interval;
+        CanExecute = canExecute;
+    }
+
+    public GlobalHotkey(string name, GamepadButton gamepadButton, Action callback, int interval = 250, bool canExecute = false)
+    {
+        Name = name;
+        Modifier = ModifierKeys.None;
+        Key = Key.None;
+        GamepadButton = gamepadButton;
+        UseGamepad = true;
         Callback = callback;
         Interval = interval;
         CanExecute = canExecute;
@@ -34,19 +50,23 @@ public partial class GlobalHotkey : ObservableObject
     
     private class HotkeyData
     {
-        public HotkeyData(string modifier, string key)
+        public HotkeyData(string modifier, string key, string gamepadButton, bool useGamepad)
         {
             Modifier = modifier;
             Key = key;
+            GamepadButton = gamepadButton;
+            UseGamepad = useGamepad;
         }
 
         public string Modifier { get; set; }
         public string Key { get; set; }
+        public string GamepadButton { get; set; }
+        public bool UseGamepad { get; set; }
     }
     
     public void Save()
     {
-        var data = new HotkeyData(Modifier.ToString(),Key.ToString());
+        var data = new HotkeyData(Modifier.ToString(), Key.ToString(), GamepadButton.ToString(), UseGamepad);
         string json = JsonSerializer.Serialize(data);
         string path = GetSavePath();
         File.WriteAllText(path, json);
@@ -77,7 +97,22 @@ public partial class GlobalHotkey : ObservableObject
             Key = key;
         }
 
-        Hotkey = new HotKey(Key, Modifier);
+        if (Enum.TryParse(data.GamepadButton, out GamepadButton gamepadBtn))
+        {
+            GamepadButton = gamepadBtn;
+        }
+
+        UseGamepad = data.UseGamepad;
+
+        // Update the HotKey property based on current settings
+        if (UseGamepad)
+        {
+            Hotkey = new HotKey(Key.None); // No keyboard key when using gamepad
+        }
+        else
+        {
+            Hotkey = new HotKey(Key, Modifier);
+        }
     }
 
     private string GetSavePath()

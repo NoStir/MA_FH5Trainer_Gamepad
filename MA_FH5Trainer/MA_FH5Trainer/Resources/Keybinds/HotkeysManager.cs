@@ -25,11 +25,15 @@ public static partial class HotkeysManager
     }
 
     /// <summary>
-    /// Sets up the system hook to capture keyboard events
+    /// Sets up the system hook to capture keyboard events and initializes gamepad input
     /// </summary>
     /// <returns>True if the hook was successfully set up, false otherwise</returns>
     public static bool SetupSystemHook()
     {
+        // Initialize gamepad support
+        GamepadManager.Initialize();
+        GamepadManager.ButtonPressed += OnGamepadButtonPressed;
+
         lock (s_hookLock)
         {
             if (s_hookId != IntPtr.Zero)
@@ -118,6 +122,10 @@ public static partial class HotkeysManager
     /// </summary>
     public static bool ShutdownSystemHook()
     {
+        // Shutdown gamepad support
+        GamepadManager.ButtonPressed -= OnGamepadButtonPressed;
+        GamepadManager.Shutdown();
+
         lock (s_hookLock)
         {
             if (s_hookId == IntPtr.Zero)
@@ -155,7 +163,12 @@ public static partial class HotkeysManager
 
     public static bool CheckExists(Key key, ModifierKeys modifierKeys)
     {
-        return s_hotkeys.Any(globalHotkey => globalHotkey.Key == key && globalHotkey.Modifier == modifierKeys);
+        return s_hotkeys.Any(globalHotkey => !globalHotkey.UseGamepad && globalHotkey.Key == key && globalHotkey.Modifier == modifierKeys);
+    }
+
+    public static bool CheckExists(GamepadButton gamepadButton)
+    {
+        return s_hotkeys.Any(globalHotkey => globalHotkey.UseGamepad && globalHotkey.GamepadButton == gamepadButton);
     }
 
     private static readonly object s_checkLock = new object();
@@ -178,7 +191,26 @@ public static partial class HotkeysManager
             {
                 foreach (var hotkey in s_hotkeys)
                 {
-                    if (Keyboard.Modifiers == hotkey.Modifier && hotkey.Key != Key.None && hotkey.CanExecute)
+                    bool shouldExecute = false;
+
+                    if (hotkey.UseGamepad)
+                    {
+                        // Check gamepad input
+                        if (hotkey.GamepadButton != GamepadButton.None && hotkey.CanExecute)
+                        {
+                            shouldExecute = GamepadManager.IsButtonPressed(hotkey.GamepadButton);
+                        }
+                    }
+                    else
+                    {
+                        // Check keyboard input
+                        if (Keyboard.Modifiers == hotkey.Modifier && hotkey.Key != Key.None && hotkey.CanExecute)
+                        {
+                            shouldExecute = Keyboard.IsKeyDown(hotkey.Key);
+                        }
+                    }
+
+                    if (shouldExecute)
                     {
                         if (hotkey.IsPressed)
                         {
@@ -186,11 +218,26 @@ public static partial class HotkeysManager
                         }
                             
                         hotkey.IsPressed = true;
-                        while (Keyboard.IsKeyDown(hotkey.Key))
+                        
+                        if (hotkey.UseGamepad)
                         {
-                            hotkey.Callback();
-                            await Task.Delay(hotkey.Interval);
+                            // For gamepad, execute once per press and wait for release
+                            while (GamepadManager.IsButtonPressed(hotkey.GamepadButton))
+                            {
+                                hotkey.Callback();
+                                await Task.Delay(hotkey.Interval);
+                            }
                         }
+                        else
+                        {
+                            // For keyboard, use existing logic
+                            while (Keyboard.IsKeyDown(hotkey.Key))
+                            {
+                                hotkey.Callback();
+                                await Task.Delay(hotkey.Interval);
+                            }
+                        }
+                        
                         hotkey.IsPressed = false;
                     }
                 }
@@ -253,6 +300,14 @@ public static partial class HotkeysManager
         }
 
         return CallNextHookEx(s_hookId, nCode, wParam, lParam);
+    }
+
+    private static void OnGamepadButtonPressed(int controllerIndex, GamepadButton button)
+    {
+        if (!s_isCheckingHotkeys)
+        {
+            Task.Run(CheckHotkeys);
+        }
     }
         
     #region Native Methods

@@ -19,6 +19,9 @@ public partial class Handling
     private readonly GlobalHotkey _brakeHackHotkey = new("Super Brake", ModifierKeys.None, Key.None, BrakeHackCallback, 1);
     private readonly GlobalHotkey _velocityHotkey = new("Velocity", ModifierKeys.None, Key.Q, VelocityCallback, 1);
     private readonly GlobalHotkey _wheelspeedHotkey = new("Wheelspeed", ModifierKeys.None, Key.None, WheelspeedCallback, 1);
+    
+    // Example gamepad hotkey - Jump Hack using gamepad A button
+    private readonly GlobalHotkey _jumpHackGamepadHotkey = new("Jump Hack (Gamepad)", GamepadButton.A, JumpHackCallback, 1000);
 
     private static void JumpHackCallback()
     {
@@ -74,6 +77,7 @@ public partial class Handling
         HotkeysManager.Register(_brakeHackHotkey);
         HotkeysManager.Register(_velocityHotkey);
         HotkeysManager.Register(_wheelspeedHotkey);
+        HotkeysManager.Register(_jumpHackGamepadHotkey);
 
         if (MainWindow.Instance != null)
         {

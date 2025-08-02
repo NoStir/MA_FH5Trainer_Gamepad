@@ -77,15 +77,7 @@
                            HorizontalAlignment="Left"
                            FontWeight="Medium"
                            FontSize="11.5"
-                           TextWrapping="Wrap">
-                    <Run Text="This cheat is 100% free. If you paid, you were scammed. Published by the"/>
-                    <Hyperlink NavigateUri="https://discord.gg/rHzev9brJ3"
-                               Foreground="DodgerBlue"
-                               RequestNavigate="Hyperlink_OnRequestNavigate">&quot;Merika's Server&quot;</Hyperlink>
-                    <Run Text="Discord." />
-                    <LineBreak/>
-                    <Run Text="Developed by @merikaaaaa on Discord. Others claiming credit are lying." />
-                </TextBlock>
+                           TextWrapping="Wrap"><Run Text="This cheat is 100% free. If you paid, you were scammed. Original published by the"/><Run Text=" Discord."/><LineBreak/><Run Text="Developed by @merikaaaaa on Discord. Keypad support added by @purrspire(DC)/@NoStir(GH)"/></TextBlock>
 
                 <StackPanel Grid.Column="1"
                             Grid.Row="0"
@@ -196,8 +188,7 @@
                            FontWeight="Bold"
                            Content="Cheat"/>
 
-                    <ComboBox SelectedIndex="0"
-                              BorderThickness="0"
+                    <ComboBox BorderThickness="0"
                               Margin="0 4 0 0"
                               ItemsSource="{Binding ViewModel.Hotkeys}"
                               SelectedItem="{Binding ViewModel.SelectedHotkey, Mode=TwoWay}"
@@ -213,16 +204,40 @@
                            Margin="0 4 0 0"
                            Content="Set Cheat Hotkey"/>
 
+                    <!-- Input Type Selection -->
+                    <Grid Margin="0 4 0 0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        
+                        <RadioButton x:Name="KeyboardInputRadio" 
+                                   Content="Keyboard" 
+                                   IsChecked="True"
+                                   Checked="InputType_Changed"
+                                   Grid.Column="0"
+                                   HorizontalAlignment="Center"/>
+                        <RadioButton x:Name="GamepadInputRadio" 
+                                   Content="Gamepad" 
+                                   Checked="InputType_Changed"
+                                   Grid.Column="1"
+                                   HorizontalAlignment="Center"/>
+                    </Grid>
+
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
 
-                        <Border CornerRadius="{StaticResource ControlCornerRadius}" Padding="2"
+                        <!-- Keyboard Input -->
+                        <Border x:Name="KeyboardInputBorder"
+                                CornerRadius="{StaticResource ControlCornerRadius}" 
+                                Padding="2"
                                 Margin="0 4 0 0"
                                 HorizontalAlignment="Stretch"
-                                Background="{Binding Theming.DarkerColour, Mode=OneWay}">
+                                Background="{Binding Theming.DarkerColour, Mode=OneWay}"
+                                Visibility="Visible">
 
                             <mah:HotKeyBox
                                 x:Name="HotKeyBox"
@@ -233,6 +248,24 @@
                                 IsEnabled="{Binding ViewModel.HotkeysEnabled, Mode=OneWay}"
                                 Background="{Binding Theming.DarkerColour, Mode=OneWay}"
                                 mah:ControlsHelper.CornerRadius="{StaticResource ControlCornerRadius}"/>
+
+                        </Border>
+
+                        <!-- Gamepad Input -->
+                        <Border x:Name="GamepadInputBorder"
+                                CornerRadius="{StaticResource ControlCornerRadius}" 
+                                Padding="2"
+                                Margin="0 4 0 0"
+                                HorizontalAlignment="Stretch"
+                                Background="{Binding Theming.DarkerColour, Mode=OneWay}"
+                                Visibility="Collapsed">
+
+                            <ComboBox x:Name="GamepadButtonComboBox"
+                                    BorderThickness="0"
+                                    HorizontalAlignment="Stretch"
+                                    IsEnabled="{Binding ViewModel.HotkeysEnabled, Mode=OneWay}"
+                                    Background="{Binding Theming.DarkerColour, Mode=OneWay}"
+                                    mah:ControlsHelper.CornerRadius="{StaticResource ControlCornerRadius}"/>
 
                         </Border>
 

@@ -25,6 +25,7 @@ public partial class MainWindow
 
         ViewModel.MakeExpandersView();
         InitializeComponent();
+        InitializeGamepadButtons();
     }
     
     protected override void OnClosed(EventArgs e)
@@ -103,21 +104,48 @@ public partial class MainWindow
             return;
         }
 
-        if (HotKeyBox.HotKey == null)
+        if (KeyboardInputRadio?.IsChecked == true)
         {
-            MessageBox.Show("No hotkey selected", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            return;
+            // Handle keyboard input
+            if (HotKeyBox?.HotKey == null)
+            {
+                MessageBox.Show("No hotkey selected", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            if (HotkeysManager.CheckExists(HotKeyBox.HotKey.Key, HotKeyBox.HotKey.ModifierKeys))
+            {
+                MessageBox.Show("Hotkey already exists!", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            hotkey.UseGamepad = false;
+            hotkey.Key = HotKeyBox.HotKey.Key;
+            hotkey.Modifier = HotKeyBox.HotKey.ModifierKeys;
+            hotkey.GamepadButton = GamepadButton.None;
+            hotkey.Hotkey = HotKeyBox.HotKey;
         }
-        
-        if (HotkeysManager.CheckExists(HotKeyBox.HotKey.Key, HotKeyBox.HotKey.ModifierKeys))
+        else
         {
-            MessageBox.Show("Hotkey already exists!", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
-            return;
+            // Handle gamepad input
+            if (GamepadButtonComboBox?.SelectedItem is not GamepadButton gamepadButton)
+            {
+                MessageBox.Show("No gamepad button selected", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            if (HotkeysManager.CheckExists(gamepadButton))
+            {
+                MessageBox.Show("Gamepad button already assigned!", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            hotkey.UseGamepad = true;
+            hotkey.GamepadButton = gamepadButton;
+            hotkey.Key = Key.None;
+            hotkey.Modifier = ModifierKeys.None;
+            hotkey.Hotkey = new MahApps.Metro.Controls.HotKey(Key.None);
         }
-        
-        hotkey.Key = HotKeyBox.HotKey.Key;
-        hotkey.Modifier = HotKeyBox.HotKey.ModifierKeys;
-        hotkey.Hotkey = HotKeyBox.HotKey;
     }
 
     private void Button_Click(object sender, RoutedEventArgs e)
@@ -133,9 +161,92 @@ public partial class MainWindow
         }
 
         GlobalHotkey? hotkey = ((GlobalHotkey?)box.SelectedItem);
-        if (hotkey != null && HotKeyBox != null)
+        if (hotkey == null)
         {
-            HotKeyBox.HotKey = hotkey.Hotkey;
+            return;
+        }
+
+        if (hotkey.UseGamepad)
+        {
+            // Set gamepad mode
+            if (GamepadInputRadio != null)
+            {
+                GamepadInputRadio.IsChecked = true;
+            }
+            if (KeyboardInputBorder != null)
+            {
+                KeyboardInputBorder.Visibility = Visibility.Collapsed;
+            }
+            if (GamepadInputBorder != null)
+            {
+                GamepadInputBorder.Visibility = Visibility.Visible;
+            }
+            if (GamepadButtonComboBox != null)
+            {
+                GamepadButtonComboBox.SelectedItem = hotkey.GamepadButton;
+            }
+        }
+        else
+        {
+            // Set keyboard mode
+            if (KeyboardInputRadio != null)
+            {
+                KeyboardInputRadio.IsChecked = true;
+            }
+            if (KeyboardInputBorder != null)
+            {
+                KeyboardInputBorder.Visibility = Visibility.Visible;
+            }
+            if (GamepadInputBorder != null)
+            {
+                GamepadInputBorder.Visibility = Visibility.Collapsed;
+            }
+            if (HotKeyBox != null)
+            {
+                HotKeyBox.HotKey = hotkey.Hotkey;
+            }
+        }
+    }
+
+    private void InitializeGamepadButtons()
+    {
+        if (GamepadButtonComboBox == null)
+        {
+            return;
+        }
+
+        // Populate gamepad button ComboBox
+        var gamepadButtons = Enum.GetValues<GamepadButton>()
+            .Where(b => b != GamepadButton.None)
+            .ToArray();
+        
+        GamepadButtonComboBox.ItemsSource = gamepadButtons;
+        GamepadButtonComboBox.SelectedIndex = 0;
+    }
+
+    private void InputType_Changed(object sender, RoutedEventArgs e)
+    {
+        if (KeyboardInputRadio?.IsChecked == true)
+        {
+            if (KeyboardInputBorder != null)
+            {
+                KeyboardInputBorder.Visibility = Visibility.Visible;
+            }
+            if (GamepadInputBorder != null)
+            {
+                GamepadInputBorder.Visibility = Visibility.Collapsed;
+            }
+        }
+        else
+        {
+            if (KeyboardInputBorder != null)
+            {
+                KeyboardInputBorder.Visibility = Visibility.Collapsed;
+            }
+            if (GamepadInputBorder != null)
+            {
+                GamepadInputBorder.Visibility = Visibility.Visible;
+            }
         }
     }
 }

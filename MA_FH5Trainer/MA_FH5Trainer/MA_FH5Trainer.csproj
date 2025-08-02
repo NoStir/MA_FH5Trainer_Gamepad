@@ -12,7 +12,7 @@
         <IsPackable>false</IsPackable>
         <AssemblyVersion>1.0.0.0</AssemblyVersion>
         <FileVersion>1.0.0.0</FileVersion>
-        <SignAssembly>true</SignAssembly>
+        <SignAssembly>True</SignAssembly>
         <AssemblyOriginatorKeyFile>MA_FH5Trainer.snk</AssemblyOriginatorKeyFile>
         <PublicSign>true</PublicSign>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -22,7 +22,7 @@
         <PlatformTarget>x64</PlatformTarget>
         <ApplicationManifest>app.manifest</ApplicationManifest>
         <Company></Company>
-        <Product>Merika's FH5 Trainer v685.421 (STEAM &amp; UWP)</Product>
+        <Product>Merika's FH5 Trainer v685.421 ( + Gamepad Support) (STEAM &amp; UWP)</Product>
         <NeutralLanguage>en-US</NeutralLanguage>
         <PackageId></PackageId>
         <Authors></Authors>
@@ -56,6 +56,7 @@
         <PackageReference Include="MahApps.Metro" Version="2.4.10" />
         <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
         <PackageReference Include="System.Management" Version="8.0.0" />
+        <PackageReference Include="SharpDX.XInput" Version="4.2.0" />
     </ItemGroup>
 
     <ItemGroup>
@@ -76,4 +77,20 @@
         <DebugType>none</DebugType>
         <Optimize>true</Optimize>
     </PropertyGroup>
+
+	<PropertyGroup>
+		<PublishSingleFile>true</PublishSingleFile>
+		<SelfContained>true</SelfContained>
+		<RuntimeIdentifier>win-x64</RuntimeIdentifier>
+		<IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+		<DebugType>none</DebugType>
+		<!-- avoids the .pdb -->
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)'=='Release'">
+		<DebugType>none</DebugType>
+		<DebugSymbols>false</DebugSymbols>
+	</PropertyGroup>
+
+
 </Project>
