@@ -1,4 +1,4 @@
-# Merika's FH5 Trainer with added gamepoad support
+# Merika's FH5 Trainer with added gamepad support
 
 ## Features
 
@@ -25,4 +25,5 @@
 ## License
 
 This app is under the GPL-3.0 license. You can find a copy of it [here](LICENSE).
+
 
